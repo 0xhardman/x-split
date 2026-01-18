@@ -4,10 +4,12 @@ import { useState } from 'react';
 import ImageUploader from '@/components/ImageUploader';
 import ControlPanel from '@/components/ControlPanel';
 import SplitPreview from '@/components/SplitPreview';
+import type { DisplayMode } from '@/lib/splitImage';
 
 export default function Home() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [segments, setSegments] = useState<2 | 3 | 4>(4);
+  const [mode, setMode] = useState<DisplayMode>('mobile');
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
@@ -44,15 +46,29 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Decorative split lines */}
-        <div className="hidden sm:flex items-center gap-1 opacity-40">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="w-0.5 h-6 rounded-full split-line"
-              style={{ animationDelay: `${i * 200}ms` }}
-            />
-          ))}
+        {/* Zoom hint */}
+        <div
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+          style={{
+            background: 'var(--bg-tertiary)',
+            color: 'var(--text-muted)',
+            border: '1px solid var(--border)'
+          }}
+        >
+          <kbd
+            className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+          >
+            ⌘
+          </kbd>
+          <span>+</span>
+          <kbd
+            className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+          >
+            -/+
+          </kbd>
+          <span>zoom</span>
         </div>
       </header>
 
@@ -103,7 +119,9 @@ export default function Home() {
             </div>
             <ControlPanel
               segments={segments}
+              mode={mode}
               onSegmentsChange={setSegments}
+              onModeChange={setMode}
               imageWidth={image?.naturalWidth}
               imageHeight={image?.naturalHeight}
               disabled={!image}
@@ -129,7 +147,7 @@ export default function Home() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SplitPreview image={image} segments={segments} />
+              <SplitPreview image={image} segments={segments} mode={mode} />
             </div>
           </section>
         </div>

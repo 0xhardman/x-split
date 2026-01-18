@@ -1,13 +1,27 @@
 // Twitter display constants (measured from actual Twitter display)
+export type DisplayMode = 'mobile' | 'desktop';
+
 export const TWITTER_DISPLAY = {
-  width: 556,           // Display width in pixels
-  segmentHeight: 253,   // Each segment's display height
-  gap: 57,              // Gap between segments in pixels
-};
+  mobile: {
+    width: 556,
+    segmentHeight: 253,
+    gap: 16,
+  },
+  desktop: {
+    width: 556,
+    segmentHeight: 253,
+    gap: 57,
+  },
+} as const;
+
+export function getDisplayConfig(mode: DisplayMode) {
+  return TWITTER_DISPLAY[mode];
+}
 
 export interface SplitOptions {
   image: HTMLImageElement;
   segments: 2 | 3 | 4;
+  mode: DisplayMode;
 }
 
 export interface SplitResult {
@@ -30,8 +44,8 @@ export interface TargetDimensions {
  * Calculate target dimensions for the image based on segment count.
  * The target includes gap space that will be removed during splitting.
  */
-export function getTargetDimensions(segments: 2 | 3 | 4): TargetDimensions {
-  const { width, segmentHeight, gap } = TWITTER_DISPLAY;
+export function getTargetDimensions(segments: 2 | 3 | 4, mode: DisplayMode): TargetDimensions {
+  const { width, segmentHeight, gap } = getDisplayConfig(mode);
   const gapCount = segments - 1;
   const contentHeight = segmentHeight * segments;
   const totalHeight = contentHeight + gap * gapCount;
@@ -91,13 +105,14 @@ export function calculateFitCrop(
  * is discarded so that when Twitter adds visual gaps, the image flows seamlessly.
  */
 export async function splitImage(options: SplitOptions): Promise<SplitResult> {
-  const { image, segments } = options;
+  const { image, segments, mode } = options;
 
   const sourceWidth = image.naturalWidth;
   const sourceHeight = image.naturalHeight;
 
   // Get target dimensions (including gap space)
-  const target = getTargetDimensions(segments);
+  const target = getTargetDimensions(segments, mode);
+  const config = getDisplayConfig(mode);
 
   // Calculate crop area to match target aspect ratio
   const crop = calculateFitCrop(sourceWidth, sourceHeight, target.aspectRatio);
@@ -113,7 +128,7 @@ export async function splitImage(options: SplitOptions): Promise<SplitResult> {
   // We need to extract segments and skip gaps
   const scale = cropHeight / target.totalHeight;
   const sourceSegmentHeight = target.segmentHeight * scale;
-  const sourceGapHeight = TWITTER_DISPLAY.gap * scale;
+  const sourceGapHeight = config.gap * scale;
 
   // Output dimensions
   const outputWidth = target.width;
@@ -178,9 +193,10 @@ export async function splitImage(options: SplitOptions): Promise<SplitResult> {
 export function getPreviewInfo(
   sourceWidth: number,
   sourceHeight: number,
-  segments: 2 | 3 | 4
+  segments: 2 | 3 | 4,
+  mode: DisplayMode
 ) {
-  const target = getTargetDimensions(segments);
+  const target = getTargetDimensions(segments, mode);
   const crop = calculateFitCrop(sourceWidth, sourceHeight, target.aspectRatio);
   const sourceAspectRatio = sourceWidth / sourceHeight;
 

@@ -2,21 +2,24 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import JSZip from 'jszip';
-import { splitImage, getPreviewInfo, TWITTER_DISPLAY, type SplitResult } from '@/lib/splitImage';
+import { splitImage, getPreviewInfo, getDisplayConfig, type SplitResult, type DisplayMode } from '@/lib/splitImage';
 
 interface SplitPreviewProps {
   image: HTMLImageElement | null;
   segments: 2 | 3 | 4;
+  mode: DisplayMode;
 }
 
-export default function SplitPreview({ image, segments }: SplitPreviewProps) {
+export default function SplitPreview({ image, segments, mode }: SplitPreviewProps) {
   const [result, setResult] = useState<SplitResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const config = getDisplayConfig(mode);
+
   const previewInfo = useMemo(() => {
     if (!image) return null;
-    return getPreviewInfo(image.naturalWidth, image.naturalHeight, segments);
-  }, [image, segments]);
+    return getPreviewInfo(image.naturalWidth, image.naturalHeight, segments, mode);
+  }, [image, segments, mode]);
 
   useEffect(() => {
     if (!image) {
@@ -27,7 +30,7 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
     const process = async () => {
       setIsProcessing(true);
       try {
-        const splitResult = await splitImage({ image, segments });
+        const splitResult = await splitImage({ image, segments, mode });
         setResult(splitResult);
       } catch (error) {
         console.error('Failed to split image:', error);
@@ -37,7 +40,7 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
     };
 
     process();
-  }, [image, segments]);
+  }, [image, segments, mode]);
 
   const handleDownloadSingle = (index: number) => {
     if (!result) return;
@@ -115,7 +118,7 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
 
   if (!result) return null;
 
-  const previewScale = Math.min(1, 420 / TWITTER_DISPLAY.width);
+  const previewScale = Math.min(1, 420 / config.width);
 
   return (
     <div className="h-full flex flex-col gap-5">
@@ -153,11 +156,11 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
               <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Twitter Preview
+                {mode === 'mobile' ? 'Mobile' : 'Desktop'} Preview
               </span>
             </div>
             <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-              {TWITTER_DISPLAY.gap}px gaps
+              {config.gap}px gaps
             </span>
           </div>
 
@@ -165,7 +168,7 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
           <div
             className="flex flex-col rounded-lg overflow-hidden"
             style={{
-              gap: `${TWITTER_DISPLAY.gap * previewScale}px`,
+              gap: `${config.gap * previewScale}px`,
               background: 'var(--bg-primary)'
             }}
           >
@@ -180,8 +183,8 @@ export default function SplitPreview({ image, segments }: SplitPreviewProps) {
                   alt={`Segment ${index + 1}`}
                   className="block"
                   style={{
-                    width: TWITTER_DISPLAY.width * previewScale,
-                    height: TWITTER_DISPLAY.segmentHeight * previewScale,
+                    width: config.width * previewScale,
+                    height: config.segmentHeight * previewScale,
                   }}
                 />
                 {/* Segment number overlay */}
