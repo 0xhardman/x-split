@@ -20,47 +20,129 @@ export default function ControlPanel({
   const target = getTargetDimensions(segments);
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-5">
+      {/* Segment Selector */}
       <div>
-        <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-          Number of segments
+        <label
+          className="block text-xs font-medium mb-3 uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Split into
         </label>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {([2, 3, 4] as const).map((num) => (
             <button
               key={num}
               onClick={() => onSegmentsChange(num)}
               disabled={disabled}
               className={`
-                flex-1 py-2 px-4 rounded-lg font-medium transition-colors
-                ${segments === num
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                }
-                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                relative py-3 rounded-lg font-display font-semibold text-lg
+                transition-all duration-200
+                ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+                ${segments === num ? 'segment-btn-active text-white' : ''}
               `}
+              style={segments !== num ? {
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-secondary)',
+              } : undefined}
             >
               {num}
+              {/* Visual representation of splits */}
+              <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                {[...Array(num)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 h-1 rounded-full"
+                    style={{
+                      background: segments === num ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)',
+                      opacity: segments === num ? 1 : 0.4
+                    }}
+                  />
+                ))}
+              </div>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg text-sm space-y-2">
-        <h4 className="font-medium text-zinc-700 dark:text-zinc-300">Twitter Display Parameters</h4>
-        <div className="text-zinc-600 dark:text-zinc-400 space-y-1">
-          <p>Target ratio: {target.width} : {target.totalHeight} (with gap space)</p>
-          <p>Each output: {target.width} x {target.segmentHeight}px</p>
-          <p>Gap between images: {TWITTER_DISPLAY.gap}px × {target.gapCount} = {TWITTER_DISPLAY.gap * target.gapCount}px (removed)</p>
-          {imageWidth && imageHeight && (
-            <>
-              <hr className="border-zinc-200 dark:border-zinc-700 my-2" />
-              <p>Your image: {imageWidth} x {imageHeight}px</p>
-              <p>Your ratio: {(imageWidth / imageHeight).toFixed(4)}</p>
-              <p>Target ratio: {target.aspectRatio.toFixed(4)}</p>
-            </>
-          )}
+      {/* Stats Panel */}
+      <div
+        className="rounded-xl p-4 space-y-3"
+        style={{
+          background: 'var(--bg-tertiary)',
+          border: '1px solid var(--border)'
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            style={{ color: 'var(--accent)' }}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            Output Parameters
+          </span>
         </div>
+
+        <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="flex justify-between">
+            <span>Target ratio</span>
+            <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+              {target.width}:{target.totalHeight}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Each segment</span>
+            <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+              {target.width} × {target.segmentHeight}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Gap removed</span>
+            <span className="font-mono" style={{ color: 'var(--accent)' }}>
+              {TWITTER_DISPLAY.gap}px × {target.gapCount}
+            </span>
+          </div>
+        </div>
+
+        {imageWidth && imageHeight && (
+          <>
+            <div
+              className="h-px my-3"
+              style={{ background: 'var(--border)' }}
+            />
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>Your image</span>
+                <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                  {imageWidth} × {imageHeight}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>Aspect ratio</span>
+                <span
+                  className="font-mono"
+                  style={{
+                    color: Math.abs((imageWidth / imageHeight) - target.aspectRatio) < 0.1
+                      ? 'var(--accent)'
+                      : 'var(--text-secondary)'
+                  }}
+                >
+                  {(imageWidth / imageHeight).toFixed(3)}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

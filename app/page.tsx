@@ -10,34 +10,97 @@ export default function Home() {
   const [segments, setSegments] = useState<2 | 3 | 4>(4);
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+      {/* Noise overlay */}
+      <div className="noise-overlay" />
+
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-3">
-        <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-          X-Split
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Split long images for seamless display on Twitter/X
-        </p>
+      <header
+        className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
+        style={{
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border)'
+        }}
+      >
+        <div className="flex items-center gap-3">
+          {/* Logo mark */}
+          <div className="relative w-10 h-10 flex items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-lg"
+              style={{
+                background: 'linear-gradient(135deg, var(--accent) 0%, #0088aa 100%)',
+                opacity: 0.15
+              }}
+            />
+            <span className="font-display font-bold text-xl text-accent relative">X</span>
+          </div>
+          <div>
+            <h1 className="font-display font-bold text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
+              X-Split
+            </h1>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Seamless Twitter image splitting
+            </p>
+          </div>
+        </div>
+
+        {/* Decorative split lines */}
+        <div className="hidden sm:flex items-center gap-1 opacity-40">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="w-0.5 h-6 rounded-full split-line"
+              style={{ animationDelay: `${i * 200}ms` }}
+            />
+          ))}
+        </div>
       </header>
 
-      {/* Main Content - Two Column Layout */}
+      {/* Main Content */}
       <main className="flex-1 flex overflow-hidden">
-        {/* Left Column - Upload & Configure */}
-        <div className="w-1/3 min-w-[320px] max-w-[400px] flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-y-auto">
+        {/* Left Panel - Controls */}
+        <div
+          className="w-80 flex-shrink-0 flex flex-col overflow-y-auto"
+          style={{
+            background: 'var(--bg-secondary)',
+            borderRight: '1px solid var(--border)'
+          }}
+        >
           {/* Upload Section */}
-          <section className="p-4 border-b border-zinc-200 dark:border-zinc-800">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-3">
-              1. Upload Image
-            </h2>
+          <section className="p-5" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center text-xs font-display font-semibold"
+                style={{
+                  background: 'var(--accent-subtle)',
+                  color: 'var(--accent)'
+                }}
+              >
+                1
+              </div>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Upload Image
+              </span>
+            </div>
             <ImageUploader onImageLoad={setImage} />
           </section>
 
           {/* Configure Section */}
-          <section className="p-4">
-            <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-3">
-              2. Configure Split
-            </h2>
+          <section className="p-5 flex-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center text-xs font-display font-semibold"
+                style={{
+                  background: 'var(--accent-subtle)',
+                  color: 'var(--accent)'
+                }}
+              >
+                2
+              </div>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Configure
+              </span>
+            </div>
             <ControlPanel
               segments={segments}
               onSegmentsChange={setSegments}
@@ -48,12 +111,23 @@ export default function Home() {
           </section>
         </div>
 
-        {/* Right Column - Preview */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950">
-          <section className="flex-1 flex flex-col p-4 overflow-hidden">
-            <h2 className="flex-shrink-0 text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-3">
-              3. Preview & Download
-            </h2>
+        {/* Right Panel - Preview */}
+        <div className="flex-1 flex flex-col overflow-hidden preview-container">
+          <section className="flex-1 flex flex-col p-6 overflow-hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <div
+                className="w-6 h-6 rounded flex items-center justify-center text-xs font-display font-semibold"
+                style={{
+                  background: 'var(--accent-subtle)',
+                  color: 'var(--accent)'
+                }}
+              >
+                3
+              </div>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Preview & Export
+              </span>
+            </div>
             <div className="flex-1 overflow-y-auto">
               <SplitPreview image={image} segments={segments} />
             </div>

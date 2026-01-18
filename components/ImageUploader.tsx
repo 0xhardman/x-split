@@ -67,12 +67,8 @@ export default function ImageUploader({ onImageLoad }: ImageUploaderProps) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={`
-          relative border-2 border-dashed rounded-lg p-4
-          transition-colors cursor-pointer
-          ${isDragging
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-            : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
-          }
+          relative rounded-xl p-5 cursor-pointer transition-all duration-300
+          ${isDragging ? 'upload-zone-active' : 'upload-zone'}
         `}
       >
         <input
@@ -83,40 +79,85 @@ export default function ImageUploader({ onImageLoad }: ImageUploaderProps) {
         />
         <div className="text-center">
           {preview ? (
-            <div className="space-y-2">
-              <img
-                src={preview}
-                alt="Preview"
-                className="max-h-24 mx-auto rounded shadow-sm"
-              />
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+            <div className="space-y-3">
+              <div className="relative inline-block">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="max-h-28 rounded-lg shadow-lg"
+                  style={{ boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)' }}
+                />
+                {/* Decorative corner accents */}
+                <div
+                  className="absolute -top-1 -left-1 w-3 h-3 border-l-2 border-t-2 rounded-tl"
+                  style={{ borderColor: 'var(--accent)' }}
+                />
+                <div
+                  className="absolute -top-1 -right-1 w-3 h-3 border-r-2 border-t-2 rounded-tr"
+                  style={{ borderColor: 'var(--accent)' }}
+                />
+                <div
+                  className="absolute -bottom-1 -left-1 w-3 h-3 border-l-2 border-b-2 rounded-bl"
+                  style={{ borderColor: 'var(--accent)' }}
+                />
+                <div
+                  className="absolute -bottom-1 -right-1 w-3 h-3 border-r-2 border-b-2 rounded-br"
+                  style={{ borderColor: 'var(--accent)' }}
+                />
+              </div>
+              <p
+                className="text-xs truncate max-w-full px-2"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 {fileName}
               </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 Click to replace
               </p>
             </div>
           ) : (
-            <div className="space-y-1 py-2">
-              <svg
-                className="mx-auto h-8 w-8 text-zinc-400"
-                stroke="currentColor"
-                fill="none"
-                viewBox="0 0 48 48"
+            <div className="space-y-3 py-3">
+              {/* Upload icon */}
+              <div
+                className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ background: 'var(--bg-elevated)' }}
               >
-                <path
-                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                Drop image here
-              </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                or click to select
-              </p>
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Drop your image here
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                  or click to browse
+                </p>
+              </div>
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <span>PNG</span>
+                <span style={{ color: 'var(--border)' }}>•</span>
+                <span>JPG</span>
+                <span style={{ color: 'var(--border)' }}>•</span>
+                <span>WebP</span>
+              </div>
             </div>
           )}
         </div>
