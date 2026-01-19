@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "X-Split - Twitter Long Image Splitter",
     description: "Free online tool to split long images into multiple segments for seamless display on Twitter/X.",
-    creator: "@xsplit",
+    creator: "@0xhardman",
   },
   robots: {
     index: true,

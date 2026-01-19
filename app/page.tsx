@@ -46,29 +46,54 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Zoom hint */}
-        <div
-          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
-          style={{
-            background: 'var(--bg-tertiary)',
-            color: 'var(--text-muted)',
-            border: '1px solid var(--border)'
-          }}
-        >
-          <kbd
-            className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-            style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+        <div className="flex items-center gap-3">
+          {/* Zoom hint */}
+          <div
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
+            style={{
+              background: 'var(--bg-tertiary)',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border)'
+            }}
           >
-            ⌘
-          </kbd>
-          <span>+</span>
-          <kbd
-            className="px-1.5 py-0.5 rounded text-[10px] font-mono"
-            style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+            <kbd
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+            >
+              ⌘
+            </kbd>
+            <span>+</span>
+            <kbd
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+            >
+              -/+
+            </kbd>
+            <span>zoom</span>
+          </div>
+
+          {/* Twitter link */}
+          <a
+            href="https://x.com/0xhardman"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-colors hover:opacity-80"
+            style={{
+              background: 'var(--bg-tertiary)',
+              color: 'var(--text-secondary)',
+              border: '1px solid var(--border)'
+            }}
           >
-            -/+
-          </kbd>
-          <span>zoom</span>
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="currentColor"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            <span>@0xhardman</span>
+          </a>
         </div>
       </header>
 
