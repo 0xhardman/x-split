@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { mergeImages, MERGE_OUTPUT_WIDTH, type MergeResult } from '@/lib/mergeImage';
+import { mergeImages, MERGE_OUTPUT_WIDTH, type MergeResult, type GapFillType } from '@/lib/mergeImage';
 import type { ImageItem } from './MergeUploader';
 
 interface MergePreviewProps {
   images: ImageItem[];
+  gapFillType: GapFillType;
+  gapSize: number;
+  solidColor: string;
 }
 
-export default function MergePreview({ images }: MergePreviewProps) {
+export default function MergePreview({ images, gapFillType, gapSize, solidColor }: MergePreviewProps) {
   const [result, setResult] = useState<MergeResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const processTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,6 +34,9 @@ export default function MergePreview({ images }: MergePreviewProps) {
       try {
         const mergeResult = await mergeImages({
           images: images.map((item) => item.image),
+          gapFillType,
+          gapSize,
+          solidColor,
         });
         setResult(mergeResult);
       } catch (error) {
@@ -45,7 +51,7 @@ export default function MergePreview({ images }: MergePreviewProps) {
         clearTimeout(processTimerRef.current);
       }
     };
-  }, [images]);
+  }, [images, gapFillType, gapSize, solidColor]);
 
   const handleDownload = () => {
     if (!result) return;

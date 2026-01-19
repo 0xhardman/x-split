@@ -5,9 +5,13 @@ import Header from '@/components/Header';
 import MobileWarning from '@/components/MobileWarning';
 import MergeUploader, { type ImageItem } from '@/components/MergeUploader';
 import MergePreview from '@/components/MergePreview';
+import { type GapFillType } from '@/lib/mergeImage';
 
 export default function MergePage() {
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [gapFillType, setGapFillType] = useState<GapFillType>('none');
+  const [gapSize, setGapSize] = useState(16);
+  const [solidColor, setSolidColor] = useState('#000000');
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
@@ -47,6 +51,119 @@ export default function MergePage() {
               </span>
             </div>
             <MergeUploader images={images} onImagesChange={setImages} maxImages={4} />
+          </section>
+
+          {/* Gap Fill Options */}
+          <section className="p-5 border-t" style={{ borderColor: 'var(--border)' }}>
+            {/* Fill Type Selector */}
+            <div className="mb-4">
+              <label
+                className="block text-xs font-medium mb-3 uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                Gap Fill
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { type: 'none' as const, label: 'None' },
+                  { type: 'blur' as const, label: 'Blur' },
+                  { type: 'solid' as const, label: 'Solid' },
+                ]).map(({ type, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => setGapFillType(type)}
+                    className={`
+                      py-2 rounded-lg text-sm font-medium
+                      transition-all duration-200 cursor-pointer
+                      ${gapFillType === type ? 'segment-btn-active text-white' : ''}
+                    `}
+                    style={gapFillType !== type ? {
+                      background: 'var(--bg-tertiary)',
+                      color: 'var(--text-secondary)',
+                    } : undefined}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Gap Size Input (only visible when fill type is not none) */}
+            {gapFillType !== 'none' && (
+              <div className="space-y-4">
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-2 uppercase tracking-wider"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Gap Size (px)
+                  </label>
+                  <input
+                    type="number"
+                    value={gapSize}
+                    onChange={(e) => setGapSize(Math.max(0, parseInt(e.target.value) || 0))}
+                    min={0}
+                    max={200}
+                    className="w-full px-3 py-2 rounded-lg text-sm font-mono"
+                    style={{
+                      background: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    {[16, 57].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setGapSize(size)}
+                        className="px-2 py-1 rounded text-xs font-mono transition-colors"
+                        style={{
+                          background: gapSize === size ? 'var(--accent-subtle)' : 'var(--bg-tertiary)',
+                          color: gapSize === size ? 'var(--accent)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {size}px
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Color Picker (only for solid fill) */}
+                {gapFillType === 'solid' && (
+                  <div>
+                    <label
+                      className="block text-xs font-medium mb-2 uppercase tracking-wider"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Fill Color
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={solidColor}
+                        onChange={(e) => setSolidColor(e.target.value)}
+                        className="w-10 h-10 rounded-lg cursor-pointer"
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border)',
+                        }}
+                      />
+                      <input
+                        type="text"
+                        value={solidColor}
+                        onChange={(e) => setSolidColor(e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-primary)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Info Panel */}
@@ -117,7 +234,7 @@ export default function MergePage() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <MergePreview images={images} />
+              <MergePreview images={images} gapFillType={gapFillType} gapSize={gapSize} solidColor={solidColor} />
             </div>
           </section>
         </div>
