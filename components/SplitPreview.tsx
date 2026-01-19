@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import { splitImage, getPreviewInfo, getDisplayConfig, type SplitResult, type DisplayMode } from '@/lib/splitImage';
 import { useCropControls, type CropState } from '@/hooks/useCropControls';
@@ -27,14 +27,23 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
     return getPreviewInfo(image.naturalWidth, image.naturalHeight, segments, mode);
   }, [image, segments, mode]);
 
-  // Process image when crop changes
+  // Debounce timer ref
+  const processTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Process image when crop changes (debounced)
   useEffect(() => {
     if (!image || !cropControls.crop) {
       setResult(null);
       return;
     }
 
-    const process = async () => {
+    // Clear previous timer
+    if (processTimerRef.current) {
+      clearTimeout(processTimerRef.current);
+    }
+
+    // Debounce the processing to avoid flickering during drag/zoom
+    processTimerRef.current = setTimeout(async () => {
       setIsProcessing(true);
       try {
         const splitResult = await splitImage({
@@ -49,9 +58,13 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
       } finally {
         setIsProcessing(false);
       }
-    };
+    }, 50);
 
-    process();
+    return () => {
+      if (processTimerRef.current) {
+        clearTimeout(processTimerRef.current);
+      }
+    };
   }, [image, segments, mode, cropControls.crop]);
 
   const handleDownloadSingle = (index: number) => {
