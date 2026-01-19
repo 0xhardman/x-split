@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
+import MobileWarning from '@/components/MobileWarning';
 import MergeUploader, { type ImageItem } from '@/components/MergeUploader';
 import MergePreview from '@/components/MergePreview';
 
@@ -10,6 +11,9 @@ export default function MergePage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+      {/* Mobile Warning */}
+      <MobileWarning />
+
       {/* Noise overlay */}
       <div className="noise-overlay" />
 

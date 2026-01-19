@@ -28,9 +28,13 @@ export default function Header() {
             <h1 className="font-display font-bold text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
               X-Split
             </h1>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Twitter image tools
-            </p>
+            <a
+              href="https://x-split.0xhardman.xyz"
+              className="text-xs font-mono hover:underline"
+              style={{ color: 'var(--accent)' }}
+            >
+              x-split.0xhardman.xyz
+            </a>
           </div>
         </div>
 

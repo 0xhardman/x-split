@@ -26,44 +26,48 @@ export default function MergeUploader({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragItemRef = useRef<number | null>(null);
 
-  const handleFiles = useCallback(async (files: FileList) => {
-    const newImages: ImageItem[] = [];
-    const remainingSlots = maxImages - images.length;
+  const handleFiles = useCallback(async (files: FileList, currentImages: ImageItem[]) => {
+    const remainingSlots = maxImages - currentImages.length;
+    const filesToProcess = Array.from(files)
+      .filter((file) => file.type.startsWith('image/'))
+      .slice(0, remainingSlots);
 
-    for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
-      const file = files[i];
-      if (!file.type.startsWith('image/')) continue;
+    if (filesToProcess.length === 0) return;
 
-      const preview = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(file);
-      });
+    // Process all files in parallel
+    const newImages = await Promise.all(
+      filesToProcess.map(async (file, i) => {
+        const preview = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
 
-      const image = await new Promise<HTMLImageElement>((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.src = preview;
-      });
+        const image = await new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.src = preview;
+        });
 
-      newImages.push({
-        id: `${Date.now()}-${i}`,
-        file,
-        preview,
-        image,
-      });
-    }
+        return {
+          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
+          file,
+          preview,
+          image,
+        };
+      })
+    );
 
-    onImagesChange([...images, ...newImages]);
-  }, [images, maxImages, onImagesChange]);
+    onImagesChange([...currentImages, ...newImages]);
+  }, [maxImages, onImagesChange]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
+      handleFiles(e.dataTransfer.files, images);
     }
-  }, [handleFiles]);
+  }, [handleFiles, images]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -77,10 +81,10 @@ export default function MergeUploader({
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      handleFiles(e.target.files);
+      handleFiles(e.target.files, images);
     }
     e.target.value = '';
-  }, [handleFiles]);
+  }, [handleFiles, images]);
 
   const handleRemove = useCallback((id: string) => {
     onImagesChange(images.filter((img) => img.id !== id));
@@ -172,9 +176,25 @@ export default function MergeUploader({
       {/* Image List */}
       {images.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Drag to reorder • Top to bottom order
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Drag to reorder • Top to bottom order
+            </p>
+            <button
+              onClick={() => onImagesChange([])}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all hover:scale-105 active:scale-95"
+              style={{
+                background: 'rgba(255, 80, 80, 0.15)',
+                color: '#ff6b6b',
+                border: '1px solid rgba(255, 80, 80, 0.3)',
+              }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Clear all
+            </button>
+          </div>
           <div className="space-y-2">
             {images.map((item, index) => (
               <div

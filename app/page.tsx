@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
+import MobileWarning from '@/components/MobileWarning';
 import ImageUploader from '@/components/ImageUploader';
 import ControlPanel from '@/components/ControlPanel';
 import SplitPreview from '@/components/SplitPreview';
@@ -14,6 +15,9 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+      {/* Mobile Warning */}
+      <MobileWarning />
+
       {/* Noise overlay */}
       <div className="noise-overlay" />
 
