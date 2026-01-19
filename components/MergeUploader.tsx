@@ -17,6 +17,57 @@ interface MergeUploaderProps {
 
 export type { ImageItem };
 
+/**
+ * Load an image from a URL and convert it to an ImageItem
+ */
+export async function loadImageFromUrl(url: string, index: number): Promise<ImageItem> {
+  // Fetch the image
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+
+  // Extract filename from URL or generate one
+  const urlPath = new URL(url).pathname;
+  const filename = urlPath.split('/').pop() || `twitter-image-${index + 1}.jpg`;
+
+  // Create a File object from the blob
+  const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+
+  // Create object URL for preview (more reliable than data URL for large images)
+  const objectUrl = URL.createObjectURL(blob);
+
+  // Load the image element first
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+    img.src = objectUrl;
+  });
+
+  // Convert to data URL for preview (needed for persistence)
+  const preview = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  // Clean up the object URL
+  URL.revokeObjectURL(objectUrl);
+
+  return {
+    id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2)}`,
+    file,
+    preview,
+    image,
+  };
+}
+
 export default function MergeUploader({
   images,
   onImagesChange,

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Header from '@/components/Header';
 import MobileWarning from '@/components/MobileWarning';
-import MergeUploader, { type ImageItem } from '@/components/MergeUploader';
+import MergeUploader, { type ImageItem, loadImageFromUrl } from '@/components/MergeUploader';
 import MergePreview from '@/components/MergePreview';
+import TwitterUrlInput from '@/components/TwitterUrlInput';
 import { type GapFillType } from '@/lib/mergeImage';
 
 export default function MergePage() {
@@ -12,6 +13,36 @@ export default function MergePage() {
   const [gapFillType, setGapFillType] = useState<GapFillType>('none');
   const [gapSize, setGapSize] = useState(16);
   const [solidColor, setSolidColor] = useState('#000000');
+  const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
+
+  const handleTwitterImagesLoaded = useCallback(async (urls: string[]) => {
+    const maxImages = 4;
+    const remainingSlots = maxImages - images.length;
+    const urlsToLoad = urls.slice(0, remainingSlots);
+
+    if (urlsToLoad.length === 0) return;
+
+    setIsLoadingFromUrl(true);
+    try {
+      // Try direct fetch first (Twitter allows CORS), fallback to proxy if needed
+      const loadedImages = await Promise.all(
+        urlsToLoad.map(async (url, index) => {
+          try {
+            return await loadImageFromUrl(url, index);
+          } catch {
+            // Fallback to proxy if direct fetch fails
+            const proxyUrl = `/api/twitter/image?url=${encodeURIComponent(url)}`;
+            return await loadImageFromUrl(proxyUrl, index);
+          }
+        })
+      );
+      setImages((prev) => [...prev, ...loadedImages]);
+    } catch (error) {
+      console.error('Error loading images from URL:', error);
+    } finally {
+      setIsLoadingFromUrl(false);
+    }
+  }, [images.length]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
@@ -50,6 +81,22 @@ export default function MergePage() {
                 Upload Images
               </span>
             </div>
+
+            {/* Twitter URL Import */}
+            {images.length < 4 && (
+              <div className="mb-4">
+                <TwitterUrlInput
+                  onImagesLoaded={handleTwitterImagesLoaded}
+                  disabled={isLoadingFromUrl}
+                />
+                <div className="flex items-center gap-3 my-3">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>or</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                </div>
+              </div>
+            )}
+
             <MergeUploader images={images} onImagesChange={setImages} maxImages={4} />
           </section>
 
