@@ -22,6 +22,7 @@ export interface SplitOptions {
   image: HTMLImageElement;
   segments: 2 | 3 | 4;
   mode: DisplayMode;
+  customCrop?: { x: number; y: number; width: number; height: number };
 }
 
 export interface SplitResult {
@@ -105,7 +106,7 @@ export function calculateFitCrop(
  * is discarded so that when Twitter adds visual gaps, the image flows seamlessly.
  */
 export async function splitImage(options: SplitOptions): Promise<SplitResult> {
-  const { image, segments, mode } = options;
+  const { image, segments, mode, customCrop } = options;
 
   const sourceWidth = image.naturalWidth;
   const sourceHeight = image.naturalHeight;
@@ -114,8 +115,8 @@ export async function splitImage(options: SplitOptions): Promise<SplitResult> {
   const target = getTargetDimensions(segments, mode);
   const config = getDisplayConfig(mode);
 
-  // Calculate crop area to match target aspect ratio
-  const crop = calculateFitCrop(sourceWidth, sourceHeight, target.aspectRatio);
+  // Use custom crop if provided, otherwise calculate auto-fit crop
+  const crop = customCrop ?? calculateFitCrop(sourceWidth, sourceHeight, target.aspectRatio);
 
   // Calculate actual pixel coordinates for cropping
   const cropX = Math.floor(crop.x * sourceWidth);

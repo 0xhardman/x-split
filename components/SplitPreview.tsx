@@ -3,6 +3,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import JSZip from 'jszip';
 import { splitImage, getPreviewInfo, getDisplayConfig, type SplitResult, type DisplayMode } from '@/lib/splitImage';
+import { useCropControls, type CropState } from '@/hooks/useCropControls';
+import CropOverlay from './CropOverlay';
+import CropControls from './CropControls';
 
 interface SplitPreviewProps {
   image: HTMLImageElement | null;
@@ -16,13 +19,17 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
 
   const config = getDisplayConfig(mode);
 
+  // Crop controls hook
+  const cropControls = useCropControls({ image, segments, mode });
+
   const previewInfo = useMemo(() => {
     if (!image) return null;
     return getPreviewInfo(image.naturalWidth, image.naturalHeight, segments, mode);
   }, [image, segments, mode]);
 
+  // Process image when crop changes
   useEffect(() => {
-    if (!image) {
+    if (!image || !cropControls.crop) {
       setResult(null);
       return;
     }
@@ -30,7 +37,12 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
     const process = async () => {
       setIsProcessing(true);
       try {
-        const splitResult = await splitImage({ image, segments, mode });
+        const splitResult = await splitImage({
+          image,
+          segments,
+          mode,
+          customCrop: cropControls.crop as CropState,
+        });
         setResult(splitResult);
       } catch (error) {
         console.error('Failed to split image:', error);
@@ -40,7 +52,7 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
     };
 
     process();
-  }, [image, segments, mode]);
+  }, [image, segments, mode, cropControls.crop]);
 
   const handleDownloadSingle = (index: number) => {
     if (!result) return;
@@ -102,8 +114,8 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
     );
   }
 
-  // Loading state
-  if (isProcessing) {
+  // Loading state (only show if no result yet)
+  if (isProcessing && !result) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -118,12 +130,12 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
 
   if (!result) return null;
 
-  const previewScale = Math.min(1, 420 / config.width);
+  const previewScale = Math.min(1, 300 / config.width);
 
   return (
-    <div className="h-full flex flex-col gap-5">
+    <div className="h-full flex flex-col gap-4">
       {/* Crop Warning */}
-      {previewInfo && (previewInfo.willCropWidth || previewInfo.willCropHeight) && (
+      {previewInfo && (previewInfo.willCropWidth || previewInfo.willCropHeight) && !cropControls.isModified && (
         <div
           className="flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
           style={{
@@ -141,18 +153,64 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
         </div>
       )}
 
-      {/* Preview Area */}
-      <div className="flex-1 flex items-start justify-center overflow-auto py-2">
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}
-        >
-          {/* Preview header */}
-          <div className="flex items-center justify-between mb-4">
+      {/* Main content - two columns */}
+      <div className="flex-1 flex gap-4 min-h-0">
+        {/* Left Column - Crop Editor */}
+        <div className="flex-1 flex flex-col gap-3 min-w-0">
+          {/* Crop Editor Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'var(--accent)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                Adjust Crop
+              </span>
+            </div>
+            {cropControls.isModified && (
+              <span className="text-xs px-2 py-0.5 rounded" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>
+                Modified
+              </span>
+            )}
+          </div>
+
+          {/* Crop Overlay */}
+          {cropControls.crop && (
+            <div
+              className="flex-1 rounded-xl overflow-hidden min-h-0"
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <CropOverlay
+                image={image}
+                crop={cropControls.crop}
+                segments={segments}
+                mode={mode}
+                onPan={cropControls.handlePan}
+                onZoomDelta={cropControls.handleZoomDelta}
+              />
+            </div>
+          )}
+
+          {/* Crop Controls */}
+          <CropControls
+            zoom={cropControls.zoom}
+            minZoom={cropControls.minZoom}
+            maxZoom={cropControls.maxZoom}
+            canZoomIn={cropControls.canZoomIn}
+            canZoomOut={cropControls.canZoomOut}
+            isModified={cropControls.isModified}
+            onZoomChange={cropControls.handleZoom}
+            onReset={cropControls.resetCrop}
+          />
+        </div>
+
+        {/* Right Column - Preview */}
+        <div className="flex-1 flex flex-col gap-3 min-w-0">
+          {/* Preview Header */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
               <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -164,42 +222,63 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
             </span>
           </div>
 
-          {/* Split images with animated entry */}
+          {/* Preview Area */}
           <div
-            className="flex flex-col rounded-lg overflow-hidden"
+            className="flex-1 rounded-xl overflow-auto flex items-start justify-center p-4"
             style={{
-              gap: `${config.gap * previewScale}px`,
-              background: 'var(--bg-primary)'
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
             }}
           >
-            {result.dataUrls.map((dataUrl, index) => (
-              <div
-                key={index}
-                className="preview-image relative group"
-                style={{ opacity: 0 }}
-              >
-                <img
-                  src={dataUrl}
-                  alt={`Segment ${index + 1}`}
-                  className="block"
-                  style={{
-                    width: config.width * previewScale,
-                    height: config.segmentHeight * previewScale,
-                  }}
-                />
-                {/* Segment number overlay */}
+            <div
+              className="flex flex-col rounded-lg overflow-hidden"
+              style={{
+                gap: `${config.gap * previewScale}px`,
+                background: 'var(--bg-primary)'
+              }}
+            >
+              {result.dataUrls.map((dataUrl, index) => (
                 <div
-                  className="absolute top-2 left-2 w-6 h-6 rounded flex items-center justify-center
-                    text-xs font-display font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    color: 'var(--accent)'
-                  }}
+                  key={index}
+                  className="preview-image relative group"
+                  style={{ opacity: 0 }}
                 >
-                  {index + 1}
+                  <img
+                    src={dataUrl}
+                    alt={`Segment ${index + 1}`}
+                    className="block"
+                    style={{
+                      width: config.width * previewScale,
+                      height: config.segmentHeight * previewScale,
+                    }}
+                  />
+                  {/* Segment number overlay */}
+                  <div
+                    className="absolute top-2 left-2 w-5 h-5 rounded flex items-center justify-center
+                      text-xs font-display font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.7)',
+                      color: 'var(--accent)'
+                    }}
+                  >
+                    {index + 1}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div
+            className="flex items-center justify-between text-xs font-mono px-3 py-2 rounded-lg"
+            style={{
+              background: 'var(--bg-tertiary)',
+              color: 'var(--text-muted)'
+            }}
+          >
+            <span>{image.naturalWidth} × {image.naturalHeight}</span>
+            <span style={{ color: 'var(--accent)' }}>→</span>
+            <span>{result.segmentWidth} × {result.segmentHeight} × {segments}</span>
           </div>
         </div>
       </div>
@@ -247,19 +326,6 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
             </svg>
             Download ZIP
           </button>
-        </div>
-
-        {/* Stats row */}
-        <div
-          className="flex items-center justify-between mt-3 pt-3 text-xs font-mono"
-          style={{
-            borderTop: '1px solid var(--border)',
-            color: 'var(--text-muted)'
-          }}
-        >
-          <span>{image.naturalWidth} × {image.naturalHeight}</span>
-          <span style={{ color: 'var(--accent)' }}>→</span>
-          <span>{result.segmentWidth} × {result.segmentHeight} × {segments}</span>
         </div>
       </div>
     </div>
