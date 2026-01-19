@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-X-Split is a client-side web tool for splitting long images into multiple segments optimized for seamless Twitter/X display. When users post multiple images on Twitter, the platform displays them with gaps between segments. This tool removes content from the gap regions so images appear continuous when viewed on Twitter.
+X-Split is a client-side web tool for creating "tap to view" seamless long image posts on Twitter/X.
+
+When posting multiple images on Twitter, the platform displays them with gaps between segments. Users split a long image into 2-4 pieces and post them together. When viewers tap the post to expand, the images display as a seamless continuous long image - this tool removes content from gap regions to achieve that effect.
 
 ## Commands
 

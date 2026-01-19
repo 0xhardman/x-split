@@ -1,6 +1,7 @@
 {
   "name": "x-split",
   "version": "0.1.0",
+  "description": "Free online tool for creating 'tap to view' seamless long image posts on Twitter/X. Split images into 2-4 segments with gap compensation for perfect alignment.",
   "private": true,
   "scripts": {
     "dev": "next dev",
