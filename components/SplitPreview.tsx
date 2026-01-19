@@ -166,10 +166,10 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
         </div>
       )}
 
-      {/* Main content - two columns */}
-      <div className="flex-1 flex gap-4 min-h-0">
+      {/* Main content - two columns (stack on mobile) */}
+      <div className="flex-1 flex flex-col md:flex-row gap-4 md:min-h-0">
         {/* Left Column - Crop Editor */}
-        <div className="flex-1 flex flex-col gap-3 min-w-0">
+        <div className="flex-1 flex flex-col gap-3 min-w-0 min-h-[300px] md:min-h-0">
           {/* Crop Editor Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
         </div>
 
         {/* Right Column - Preview */}
-        <div className="flex-1 flex flex-col gap-3 min-w-0">
+        <div className="flex-1 flex flex-col gap-3 min-w-0 min-h-[300px] md:min-h-0">
           {/* Preview Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -298,23 +298,23 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
 
       {/* Download Actions */}
       <div
-        className="flex-shrink-0 rounded-xl p-4"
+        className="flex-shrink-0 rounded-xl p-3 md:p-4"
         style={{
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border)'
         }}
       >
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* Individual downloads */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <span className="hidden md:inline text-xs" style={{ color: 'var(--text-muted)' }}>
               Download:
             </span>
             {result.dataUrls.map((_, index) => (
               <button
                 key={index}
                 onClick={() => handleDownloadSingle(index)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center
+                className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center
                   text-xs font-display font-semibold transition-all duration-200
                   hover:scale-105 active:scale-95"
                 style={{
@@ -331,13 +331,13 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
           {/* Download all button */}
           <button
             onClick={handleDownloadAll}
-            className="btn-download flex items-center gap-2 px-5 py-2.5 rounded-lg
-              text-sm font-medium text-white"
+            className="btn-download flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg
+              text-xs md:text-sm font-medium text-white"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Download ZIP
+            <span className="hidden sm:inline">Download</span> ZIP
           </button>
         </div>
       </div>

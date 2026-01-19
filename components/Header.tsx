@@ -5,16 +5,16 @@ import NavTabs from './NavTabs';
 export default function Header() {
   return (
     <header
-      className="flex-shrink-0 px-6 py-4 flex items-center justify-between"
+      className="flex-shrink-0 px-3 md:px-6 py-3 md:py-4 flex items-center justify-between"
       style={{
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border)'
       }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="relative w-10 h-10 flex items-center justify-center">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="relative w-8 h-8 md:w-10 md:h-10 flex items-center justify-center">
             <div
               className="absolute inset-0 rounded-lg"
               style={{
@@ -22,15 +22,15 @@ export default function Header() {
                 opacity: 0.15
               }}
             />
-            <span className="font-display font-bold text-xl text-accent relative">X</span>
+            <span className="font-display font-bold text-lg md:text-xl text-accent relative">X</span>
           </div>
           <div>
-            <h1 className="font-display font-bold text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            <h1 className="font-display font-bold text-base md:text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
               X-Split
             </h1>
             <a
               href="https://x-split.0xhardman.xyz"
-              className="text-xs font-mono hover:underline"
+              className="hidden md:block text-xs font-mono hover:underline"
               style={{ color: 'var(--accent)' }}
             >
               x-split.0xhardman.xyz
@@ -42,7 +42,7 @@ export default function Header() {
         <NavTabs />
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* Zoom hint */}
         <div
           className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs"
@@ -73,7 +73,7 @@ export default function Header() {
           href="https://x.com/0xhardman"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-colors hover:opacity-80"
+          className="flex items-center gap-2 p-2 md:px-3 md:py-1.5 rounded-full text-xs transition-colors hover:opacity-80"
           style={{
             background: 'var(--bg-tertiary)',
             color: 'var(--text-secondary)',
@@ -88,7 +88,7 @@ export default function Header() {
           >
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
-          <span>@0xhardman</span>
+          <span className="hidden md:inline">@0xhardman</span>
         </a>
       </div>
     </header>

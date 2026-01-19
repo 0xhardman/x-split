@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Header from '@/components/Header';
-import MobileWarning from '@/components/MobileWarning';
 import ImageUploader from '@/components/ImageUploader';
 import ControlPanel from '@/components/ControlPanel';
 import SplitPreview from '@/components/SplitPreview';
@@ -14,10 +13,7 @@ export default function Home() {
   const [mode, setMode] = useState<DisplayMode>('mobile');
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      {/* Mobile Warning */}
-      <MobileWarning />
-
+    <div className="min-h-screen md:h-screen flex flex-col md:overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Noise overlay */}
       <div className="noise-overlay" />
 
@@ -25,13 +21,13 @@ export default function Home() {
       <Header />
 
       {/* Main Content */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
         {/* Left Panel - Controls */}
         <div
-          className="w-80 flex-shrink-0 flex flex-col overflow-y-auto"
+          className="w-full md:w-80 flex-shrink-0 flex flex-col md:overflow-y-auto border-b md:border-b-0 md:border-r"
           style={{
             background: 'var(--bg-secondary)',
-            borderRight: '1px solid var(--border)'
+            borderColor: 'var(--border)'
           }}
         >
           {/* Upload Section */}
@@ -82,8 +78,8 @@ export default function Home() {
         </div>
 
         {/* Right Panel - Preview */}
-        <div className="flex-1 flex flex-col overflow-hidden preview-container">
-          <section className="flex-1 flex flex-col p-6 overflow-hidden">
+        <div className="flex-1 flex flex-col md:overflow-hidden preview-container md:min-h-0">
+          <section className="flex-1 flex flex-col p-4 md:p-6 md:overflow-hidden">
             <div className="flex items-center gap-2 mb-4">
               <div
                 className="w-6 h-6 rounded flex items-center justify-center text-xs font-display font-semibold"
