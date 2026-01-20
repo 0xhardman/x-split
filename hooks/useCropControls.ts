@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { calculateFitCrop, getTargetDimensions, type DisplayMode } from '@/lib/splitImage';
+import { calculateFitCrop, getTargetDimensionsV2, type DimensionConfig } from '@/lib/splitImage';
 
 export interface CropState {
   x: number;      // 0-1 normalized
@@ -13,7 +13,7 @@ export interface CropState {
 interface UseCropControlsParams {
   image: HTMLImageElement | null;
   segments: 2 | 3 | 4;
-  mode: DisplayMode;
+  dimensionConfig: DimensionConfig;
 }
 
 interface UseCropControlsReturn {
@@ -31,15 +31,18 @@ interface UseCropControlsReturn {
 }
 
 // Generate a stable key for tracking config changes
-function getConfigKey(image: HTMLImageElement | null, segments: number, mode: string): string {
+function getConfigKey(image: HTMLImageElement | null, segments: number, config: DimensionConfig): string {
   if (!image) return 'null';
-  return `${image.src}-${image.naturalWidth}-${image.naturalHeight}-${segments}-${mode}`;
+  const configStr = config.preset === 'twitter'
+    ? `twitter-${config.mode}`
+    : `custom-${config.custom?.width}-${config.custom?.segmentHeights.join(',')}-${config.custom?.gap}`;
+  return `${image.src}-${image.naturalWidth}-${image.naturalHeight}-${segments}-${configStr}`;
 }
 
 export function useCropControls({
   image,
   segments,
-  mode,
+  dimensionConfig,
 }: UseCropControlsParams): UseCropControlsReturn {
   // Track config to reset when it changes
   const [lastConfigKey, setLastConfigKey] = useState<string>('');
@@ -57,16 +60,16 @@ export function useCropControls({
   const baseCrop = useMemo(() => {
     if (!image) return null;
 
-    const target = getTargetDimensions(segments, mode);
+    const target = getTargetDimensionsV2(segments, dimensionConfig);
     return calculateFitCrop(
       image.naturalWidth,
       image.naturalHeight,
       target.aspectRatio
     );
-  }, [image, segments, mode]);
+  }, [image, segments, dimensionConfig]);
 
   // Check if config changed and reset if needed
-  const currentConfigKey = getConfigKey(image, segments, mode);
+  const currentConfigKey = getConfigKey(image, segments, dimensionConfig);
   const configChanged = currentConfigKey !== lastConfigKey;
 
   // Calculate current crop from baseCrop + user adjustments

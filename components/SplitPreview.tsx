@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
-import { splitImage, getPreviewInfo, getDisplayConfig, type SplitResult, type DisplayMode } from '@/lib/splitImage';
+import { splitImageV2, getPreviewInfoV2, getTargetDimensionsV2, type SplitResultV2, type DimensionConfig } from '@/lib/splitImage';
 import { useCropControls, type CropState } from '@/hooks/useCropControls';
 import CropOverlay from './CropOverlay';
 import CropControls from './CropControls';
@@ -10,22 +10,55 @@ import CropControls from './CropControls';
 interface SplitPreviewProps {
   image: HTMLImageElement | null;
   segments: 2 | 3 | 4;
-  mode: DisplayMode;
+  dimensionConfig: DimensionConfig;
 }
 
-export default function SplitPreview({ image, segments, mode }: SplitPreviewProps) {
-  const [result, setResult] = useState<SplitResult | null>(null);
+export default function SplitPreview({ image, segments, dimensionConfig }: SplitPreviewProps) {
+  const [result, setResult] = useState<SplitResultV2 | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewScale, setPreviewScale] = useState(1);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  const config = getDisplayConfig(mode);
+  const target = getTargetDimensionsV2(segments, dimensionConfig);
+
+  // Calculate preview scale to fit container
+  const updatePreviewScale = useCallback(() => {
+    if (!previewContainerRef.current || !result) return;
+
+    const container = previewContainerRef.current;
+    const padding = 32; // p-4 = 16px * 2
+    const availableWidth = container.clientWidth - padding;
+    const availableHeight = container.clientHeight - padding;
+
+    // Calculate total preview dimensions
+    const previewWidth = result.segmentWidth;
+    const totalGapHeight = target.gap * (segments - 1);
+    const previewHeight = result.segmentHeights.reduce((sum, h) => sum + h, 0) + totalGapHeight;
+
+    // Calculate scale to fit both dimensions
+    const scaleX = availableWidth / previewWidth;
+    const scaleY = availableHeight / previewHeight;
+    const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+
+    setPreviewScale(scale);
+  }, [result, target.gap, segments]);
+
+  // Update scale on result change and window resize
+  useEffect(() => {
+    updatePreviewScale();
+
+    const handleResize = () => updatePreviewScale();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [updatePreviewScale]);
 
   // Crop controls hook
-  const cropControls = useCropControls({ image, segments, mode });
+  const cropControls = useCropControls({ image, segments, dimensionConfig });
 
   const previewInfo = useMemo(() => {
     if (!image) return null;
-    return getPreviewInfo(image.naturalWidth, image.naturalHeight, segments, mode);
-  }, [image, segments, mode]);
+    return getPreviewInfoV2(image.naturalWidth, image.naturalHeight, segments, dimensionConfig);
+  }, [image, segments, dimensionConfig]);
 
   // Debounce timer ref
   const processTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,10 +79,10 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
     processTimerRef.current = setTimeout(async () => {
       setIsProcessing(true);
       try {
-        const splitResult = await splitImage({
+        const splitResult = await splitImageV2({
           image,
           segments,
-          mode,
+          dimensionConfig,
           customCrop: cropControls.crop as CropState,
         });
         setResult(splitResult);
@@ -65,7 +98,7 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
         clearTimeout(processTimerRef.current);
       }
     };
-  }, [image, segments, mode, cropControls.crop]);
+  }, [image, segments, dimensionConfig, cropControls.crop]);
 
   const handleDownloadSingle = (index: number) => {
     if (!result) return;
@@ -143,8 +176,6 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
 
   if (!result) return null;
 
-  const previewScale = Math.min(1, 300 / config.width);
-
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Crop Warning */}
@@ -200,7 +231,7 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
                 image={image}
                 crop={cropControls.crop}
                 segments={segments}
-                mode={mode}
+                dimensionConfig={dimensionConfig}
                 onPan={cropControls.handlePan}
                 onZoomDelta={cropControls.handleZoomDelta}
               />
@@ -227,17 +258,20 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
               <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                {mode === 'mobile' ? 'Mobile' : 'Desktop'} Preview
+                {dimensionConfig.preset === 'twitter'
+                  ? `${dimensionConfig.mode === 'mobile' ? 'Mobile' : 'Desktop'} Preview`
+                  : 'Custom Preview'}
               </span>
             </div>
             <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-              {config.gap}px gaps
+              {target.gap}px gaps
             </span>
           </div>
 
           {/* Preview Area */}
           <div
-            className="flex-1 rounded-xl overflow-auto flex items-start justify-center p-4"
+            ref={previewContainerRef}
+            className="flex-1 rounded-xl overflow-hidden flex items-center justify-center p-4"
             style={{
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
@@ -246,8 +280,8 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
             <div
               className="flex flex-col rounded-lg overflow-hidden"
               style={{
-                gap: `${config.gap * previewScale}px`,
-                background: 'var(--bg-primary)'
+                gap: `${target.gap * previewScale}px`,
+                background: 'var(--bg-primary)',
               }}
             >
               {result.dataUrls.map((dataUrl, index) => (
@@ -261,8 +295,8 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
                     alt={`Segment ${index + 1}`}
                     className="block"
                     style={{
-                      width: config.width * previewScale,
-                      height: config.segmentHeight * previewScale,
+                      width: result.segmentWidth * previewScale,
+                      height: result.segmentHeights[index] * previewScale,
                     }}
                   />
                   {/* Segment number overlay */}
@@ -291,7 +325,14 @@ export default function SplitPreview({ image, segments, mode }: SplitPreviewProp
           >
             <span>{image.naturalWidth} × {image.naturalHeight}</span>
             <span style={{ color: 'var(--accent)' }}>→</span>
-            <span>{result.segmentWidth} × {result.segmentHeight} × {segments}</span>
+            <span>
+              {result.segmentWidth} × {
+                // Show single height if uniform, or range if variable
+                new Set(result.segmentHeights).size === 1
+                  ? result.segmentHeights[0]
+                  : `${Math.min(...result.segmentHeights)}–${Math.max(...result.segmentHeights)}`
+              } × {segments}
+            </span>
           </div>
         </div>
       </div>

@@ -2,13 +2,13 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CropState } from '@/hooks/useCropControls';
-import { getTargetDimensions, getDisplayConfig, type DisplayMode } from '@/lib/splitImage';
+import { getTargetDimensionsV2, type DimensionConfig } from '@/lib/splitImage';
 
 interface CropOverlayProps {
   image: HTMLImageElement;
   crop: CropState;
   segments: 2 | 3 | 4;
-  mode: DisplayMode;
+  dimensionConfig: DimensionConfig;
   onPan: (deltaX: number, deltaY: number) => void;
   onZoomDelta: (delta: number) => void;
 }
@@ -17,7 +17,7 @@ export default function CropOverlay({
   image,
   crop,
   segments,
-  mode,
+  dimensionConfig,
   onPan,
   onZoomDelta,
 }: CropOverlayProps) {
@@ -26,8 +26,7 @@ export default function CropOverlay({
   const [isDragging, setIsDragging] = useState(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const config = getDisplayConfig(mode);
-  const target = getTargetDimensions(segments, mode);
+  const target = getTargetDimensionsV2(segments, dimensionConfig);
 
   // Draw the image with crop overlay
   useEffect(() => {
@@ -106,12 +105,15 @@ export default function CropOverlay({
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 4]);
 
-    const segmentHeightRatio = target.segmentHeight / target.totalHeight;
-    const gapHeightRatio = config.gap / target.totalHeight;
+    const gapHeightRatio = target.gap / target.totalHeight;
 
-    for (let i = 1; i < segments; i++) {
+    // Calculate cumulative positions for variable segment heights
+    let cumulativeHeightRatio = 0;
+    for (let i = 0; i < segments - 1; i++) {
+      cumulativeHeightRatio += target.segmentHeights[i] / target.totalHeight;
+
       // Position of gap start
-      const gapStartRatio = i * segmentHeightRatio + (i - 1) * gapHeightRatio;
+      const gapStartRatio = cumulativeHeightRatio;
       const gapEndRatio = gapStartRatio + gapHeightRatio;
 
       // Draw gap indicator
@@ -119,6 +121,8 @@ export default function CropOverlay({
       const gapEndY = cropY + gapEndRatio * cropH;
 
       ctx.strokeRect(cropX + 2, gapStartY, cropW - 4, gapEndY - gapStartY);
+
+      cumulativeHeightRatio += gapHeightRatio;
     }
 
     ctx.setLineDash([]);
@@ -143,7 +147,7 @@ export default function CropOverlay({
     ctx.fillRect(cropX + cropW - handleSize + 2, cropY + cropH - 1, handleSize, 3);
     ctx.fillRect(cropX + cropW - 1, cropY + cropH - handleSize + 2, 3, handleSize);
 
-  }, [image, crop, segments, mode, config, target]);
+  }, [image, crop, segments, dimensionConfig, target]);
 
   // Get display dimensions for coordinate conversion
   const getDisplayDimensions = useCallback(() => {

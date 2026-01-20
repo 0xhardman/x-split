@@ -1,16 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Header from '@/components/Header';
 import ImageUploader from '@/components/ImageUploader';
 import ControlPanel from '@/components/ControlPanel';
 import SplitPreview from '@/components/SplitPreview';
-import type { DisplayMode } from '@/lib/splitImage';
+import type { DisplayMode, DimensionConfig } from '@/lib/splitImage';
+import { createDefaultDimensionConfig } from '@/lib/splitImage';
 
 export default function Home() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [segments, setSegments] = useState<2 | 3 | 4>(4);
   const [mode, setMode] = useState<DisplayMode>('mobile');
+  const [dimensionConfig, setDimensionConfig] = useState<DimensionConfig>(
+    createDefaultDimensionConfig('mobile')
+  );
+
+  // Update mode and sync with dimensionConfig
+  const handleModeChange = useCallback((newMode: DisplayMode) => {
+    setMode(newMode);
+    setDimensionConfig((prev) => ({
+      ...prev,
+      mode: newMode,
+    }));
+  }, []);
 
   return (
     <div className="min-h-screen md:h-screen flex flex-col md:overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
@@ -68,8 +81,10 @@ export default function Home() {
             <ControlPanel
               segments={segments}
               mode={mode}
+              dimensionConfig={dimensionConfig}
               onSegmentsChange={setSegments}
-              onModeChange={setMode}
+              onModeChange={handleModeChange}
+              onDimensionConfigChange={setDimensionConfig}
               imageWidth={image?.naturalWidth}
               imageHeight={image?.naturalHeight}
               disabled={!image}
@@ -95,7 +110,7 @@ export default function Home() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SplitPreview image={image} segments={segments} mode={mode} />
+              <SplitPreview image={image} segments={segments} dimensionConfig={dimensionConfig} />
             </div>
           </section>
         </div>
