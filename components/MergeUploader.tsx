@@ -74,8 +74,9 @@ export default function MergeUploader({
   maxImages = 4,
 }: MergeUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const dragItemRef = useRef<number | null>(null);
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
 
   const handleFiles = useCallback(async (files: FileList, currentImages: ImageItem[]) => {
     const remainingSlots = maxImages - currentImages.length;
@@ -142,34 +143,96 @@ export default function MergeUploader({
   }, [images, onImagesChange]);
 
   // Drag and drop reordering
-  const handleItemDragStart = (index: number) => {
+  const handleItemDragStart = (e: React.DragEvent, index: number) => {
     dragItemRef.current = index;
+    setDraggingItemId(images[index].id);
+    // Set drag image (optional, improves visual feedback)
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+    }
   };
 
   const handleItemDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    setDragOverIndex(index);
+    const dragIndex = dragItemRef.current;
+    if (dragIndex === null) return;
+
+    // Calculate insert position based on mouse Y position relative to item center
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const mouseY = e.clientY;
+
+    // Determine insert index: if mouse is in top half, insert before; bottom half, insert after
+    let newInsertIndex: number;
+    if (mouseY < midY) {
+      newInsertIndex = index;
+    } else {
+      newInsertIndex = index + 1;
+    }
+
+    // Adjust for the dragged item being removed
+    if (dragIndex < newInsertIndex) {
+      newInsertIndex -= 1;
+    }
+
+    // Don't show indicator if dropping at same position
+    if (newInsertIndex === dragIndex) {
+      setInsertIndex(null);
+    } else {
+      setInsertIndex(mouseY < midY ? index : index + 1);
+    }
   };
 
-  const handleItemDrop = (e: React.DragEvent, dropIndex: number) => {
+  const handleItemDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const dragIndex = dragItemRef.current;
-    if (dragIndex === null || dragIndex === dropIndex) {
-      setDragOverIndex(null);
+
+    if (dragIndex === null || insertIndex === null) {
+      resetDragState();
+      return;
+    }
+
+    // Calculate actual insert position
+    let actualInsertIndex = insertIndex;
+    if (dragIndex < insertIndex) {
+      actualInsertIndex -= 1;
+    }
+
+    if (actualInsertIndex === dragIndex) {
+      resetDragState();
       return;
     }
 
     const newImages = [...images];
     const [draggedItem] = newImages.splice(dragIndex, 1);
-    newImages.splice(dropIndex, 0, draggedItem);
+    newImages.splice(actualInsertIndex, 0, draggedItem);
     onImagesChange(newImages);
-    setDragOverIndex(null);
+    resetDragState();
+  };
+
+  const resetDragState = () => {
+    setInsertIndex(null);
+    setDraggingItemId(null);
     dragItemRef.current = null;
   };
 
   const handleItemDragEnd = () => {
-    setDragOverIndex(null);
-    dragItemRef.current = null;
+    resetDragState();
+  };
+
+  // Move item up/down (for mobile)
+  const handleMoveUp = (index: number) => {
+    if (index === 0) return;
+    const newImages = [...images];
+    [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
+    onImagesChange(newImages);
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (index === images.length - 1) return;
+    const newImages = [...images];
+    [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+    onImagesChange(newImages);
   };
 
   return (
@@ -229,7 +292,7 @@ export default function MergeUploader({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Drag to reorder • Top to bottom order
+              <span className="hidden md:inline">Drag to reorder • </span>Top to bottom
             </p>
             <button
               onClick={() => onImagesChange([])}
@@ -246,30 +309,69 @@ export default function MergeUploader({
               Clear all
             </button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-0">
             {images.map((item, index) => (
-              <div
-                key={item.id}
-                draggable
-                onDragStart={() => handleItemDragStart(index)}
-                onDragOver={(e) => handleItemDragOver(e, index)}
-                onDrop={(e) => handleItemDrop(e, index)}
-                onDragEnd={handleItemDragEnd}
-                className={`
-                  flex items-center gap-3 p-2 rounded-lg cursor-grab active:cursor-grabbing
-                  transition-all duration-200
-                  ${dragOverIndex === index ? 'ring-2 ring-[var(--accent)]' : ''}
-                `}
-                style={{
-                  background: 'var(--bg-tertiary)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                {/* Drag handle */}
-                <div className="flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+              <div key={item.id} className="relative">
+                {/* Insert indicator - before this item */}
+                {insertIndex === index && draggingItemId !== item.id && (
+                  <div
+                    className="absolute -top-1 left-0 right-0 h-1 rounded-full z-10"
+                    style={{ background: 'var(--accent)' }}
+                  />
+                )}
+                <div
+                  draggable
+                  onDragStart={(e) => handleItemDragStart(e, index)}
+                  onDragOver={(e) => handleItemDragOver(e, index)}
+                  onDrop={handleItemDrop}
+                  onDragEnd={handleItemDragEnd}
+                  className={`
+                    flex items-center gap-2 md:gap-3 p-2 my-1 rounded-lg md:cursor-grab md:active:cursor-grabbing
+                    transition-all duration-200
+                  `}
+                  style={{
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
+                    opacity: draggingItemId === item.id ? 0.5 : 1,
+                  }}
+                >
+                {/* Drag handle - desktop only */}
+                <div className="hidden md:block flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                   </svg>
+                </div>
+
+                {/* Move up/down buttons - mobile only */}
+                <div className="flex md:hidden flex-col gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                    style={{
+                      color: index === 0 ? 'var(--text-muted)' : 'var(--text-secondary)',
+                      opacity: index === 0 ? 0.4 : 1,
+                      background: 'var(--bg-elevated)',
+                    }}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === images.length - 1}
+                    className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                    style={{
+                      color: index === images.length - 1 ? 'var(--text-muted)' : 'var(--text-secondary)',
+                      opacity: index === images.length - 1 ? 0.4 : 1,
+                      background: 'var(--bg-elevated)',
+                    }}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                 </div>
 
                 {/* Order number */}
@@ -287,7 +389,7 @@ export default function MergeUploader({
                 <img
                   src={item.preview}
                   alt={`Image ${index + 1}`}
-                  className="w-12 h-12 object-cover rounded"
+                  className="w-10 h-10 md:w-12 md:h-12 object-cover rounded"
                 />
 
                 {/* File info */}
@@ -306,13 +408,21 @@ export default function MergeUploader({
                 {/* Remove button */}
                 <button
                   onClick={() => handleRemove(item.id)}
-                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-elevated)]"
+                  className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-elevated)]"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+                </div>
+                {/* Insert indicator - after last item */}
+                {index === images.length - 1 && insertIndex === images.length && (
+                  <div
+                    className="absolute -bottom-1 left-0 right-0 h-1 rounded-full z-10"
+                    style={{ background: 'var(--accent)' }}
+                  />
+                )}
               </div>
             ))}
           </div>
