@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { mergeImages, MERGE_OUTPUT_WIDTH, type MergeResult, type GapFillType } from '@/lib/mergeImage';
+import { mergeImages, type MergeResult, type GapFillType } from '@/lib/mergeImage';
 import type { ImageItem } from './MergeUploader';
 
 interface MergePreviewProps {
@@ -170,7 +170,7 @@ export default function MergePreview({ images, gapFillType, gapSize, solidColor 
       >
         <span>{images.length} images</span>
         <span style={{ color: 'var(--accent)' }}>→</span>
-        <span>{MERGE_OUTPUT_WIDTH} × {result.height}</span>
+        <span>{result.width} × {result.height}</span>
       </div>
 
       {/* Download Button */}

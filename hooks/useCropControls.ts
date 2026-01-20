@@ -31,11 +31,12 @@ interface UseCropControlsReturn {
 }
 
 // Generate a stable key for tracking config changes
+// Only reset crop when switching presets/modes/segments, NOT when adjusting custom dimensions
 function getConfigKey(image: HTMLImageElement | null, segments: number, config: DimensionConfig): string {
   if (!image) return 'null';
   const configStr = config.preset === 'twitter'
     ? `twitter-${config.mode}`
-    : `custom-${config.custom?.width}-${config.custom?.segmentHeights.join(',')}-${config.custom?.gap}`;
+    : 'custom'; // Don't include dimension values - allow drag adjustments without reset
   return `${image.src}-${image.naturalWidth}-${image.naturalHeight}-${segments}-${configStr}`;
 }
 

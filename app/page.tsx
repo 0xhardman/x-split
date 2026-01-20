@@ -110,7 +110,12 @@ export default function Home() {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SplitPreview image={image} segments={segments} dimensionConfig={dimensionConfig} />
+              <SplitPreview
+                image={image}
+                segments={segments}
+                dimensionConfig={dimensionConfig}
+                onDimensionConfigChange={setDimensionConfig}
+              />
             </div>
           </section>
         </div>

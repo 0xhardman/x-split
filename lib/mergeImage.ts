@@ -1,7 +1,5 @@
 // Merge multiple images into one vertical long image
 
-export const MERGE_OUTPUT_WIDTH = 556; // Match split output width
-
 export type GapFillType = 'none' | 'blur' | 'solid';
 
 export interface MergeOptions {
@@ -9,6 +7,7 @@ export interface MergeOptions {
   gapFillType?: GapFillType;
   gapSize?: number;
   solidColor?: string;
+  outputWidth?: number; // If not specified, uses max width from images
 }
 
 export interface MergeResult {
@@ -122,11 +121,12 @@ function drawSolidGapFill(
 
 /**
  * Merge multiple images vertically into one long image.
- * All images are scaled to MERGE_OUTPUT_WIDTH (556px) maintaining aspect ratio.
+ * By default, uses the maximum width from all input images, scaling smaller images up.
+ * Optionally, a custom outputWidth can be specified.
  * Supports different gap fill types: none, blur blend, or solid color.
  */
 export async function mergeImages(options: MergeOptions): Promise<MergeResult> {
-  const { images, gapFillType = 'none', gapSize = 0, solidColor = '#000000' } = options;
+  const { images, gapFillType = 'none', gapSize = 0, solidColor = '#000000', outputWidth } = options;
 
   if (images.length === 0) {
     throw new Error('No images to merge');
@@ -135,12 +135,15 @@ export async function mergeImages(options: MergeOptions): Promise<MergeResult> {
   const gapHeight = gapFillType !== 'none' ? gapSize : 0;
   const gapCount = images.length - 1;
 
+  // Determine output width: use provided width, or max width from images
+  const targetWidth = outputWidth ?? Math.max(...images.map(img => img.naturalWidth));
+
   // Calculate scaled dimensions for each image
   const scaledImages = images.map((img) => {
-    const scale = MERGE_OUTPUT_WIDTH / img.naturalWidth;
+    const scale = targetWidth / img.naturalWidth;
     return {
       img,
-      width: MERGE_OUTPUT_WIDTH,
+      width: targetWidth,
       height: Math.round(img.naturalHeight * scale),
     };
   });
@@ -162,7 +165,7 @@ export async function mergeImages(options: MergeOptions): Promise<MergeResult> {
 
   // Create final canvas
   const canvas = document.createElement('canvas');
-  canvas.width = MERGE_OUTPUT_WIDTH;
+  canvas.width = targetWidth;
   canvas.height = totalHeight;
 
   const ctx = canvas.getContext('2d');
@@ -188,10 +191,10 @@ export async function mergeImages(options: MergeOptions): Promise<MergeResult> {
           imageCanvases[i + 1],
           currentY,
           gapHeight,
-          MERGE_OUTPUT_WIDTH
+          targetWidth
         );
       } else if (gapFillType === 'solid') {
-        drawSolidGapFill(ctx, currentY, gapHeight, MERGE_OUTPUT_WIDTH, solidColor);
+        drawSolidGapFill(ctx, currentY, gapHeight, targetWidth, solidColor);
       }
       currentY += gapHeight;
     }
@@ -214,7 +217,7 @@ export async function mergeImages(options: MergeOptions): Promise<MergeResult> {
   return {
     blob,
     dataUrl,
-    width: MERGE_OUTPUT_WIDTH,
+    width: targetWidth,
     height: totalHeight,
   };
 }

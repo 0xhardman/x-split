@@ -11,15 +11,25 @@ interface SplitPreviewProps {
   image: HTMLImageElement | null;
   segments: 2 | 3 | 4;
   dimensionConfig: DimensionConfig;
+  onDimensionConfigChange?: (config: DimensionConfig) => void;
 }
 
-export default function SplitPreview({ image, segments, dimensionConfig }: SplitPreviewProps) {
+export default function SplitPreview({ image, segments, dimensionConfig, onDimensionConfigChange }: SplitPreviewProps) {
   const [result, setResult] = useState<SplitResultV2 | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewScale, setPreviewScale] = useState(1);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   const target = getTargetDimensionsV2(segments, dimensionConfig);
+
+  // Handle dimension changes from CropOverlay drag
+  const handleDimensionChange = useCallback((width: number, segmentHeights: number[], gap: number) => {
+    if (!onDimensionConfigChange || dimensionConfig.preset !== 'custom') return;
+    onDimensionConfigChange({
+      ...dimensionConfig,
+      custom: { width, segmentHeights, gap },
+    });
+  }, [onDimensionConfigChange, dimensionConfig]);
 
   // Calculate preview scale to fit container
   const updatePreviewScale = useCallback(() => {
@@ -234,6 +244,7 @@ export default function SplitPreview({ image, segments, dimensionConfig }: Split
                 dimensionConfig={dimensionConfig}
                 onPan={cropControls.handlePan}
                 onZoomDelta={cropControls.handleZoomDelta}
+                onDimensionChange={handleDimensionChange}
               />
             </div>
           )}
